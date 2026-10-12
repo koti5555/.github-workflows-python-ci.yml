@@ -1,0 +1,54 @@
+name: First Python CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Get project code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          fi
+          pip install pytest
+
+      - name: Check Python version
+        run: python --version
+
+      - name: Run tests
+        run: |
+          if [ -d tests ] || [ -f test_quality.py ]; then
+            python -m pytest -v
+          else
+            echo "No test files found. Skipping tests."
+          fi
+
+      - name: Check ML quality gate
+        run: |
+          if [ -f quality_gate.py ]; then
+            python quality_gate.py
+          else
+            echo "Error: quality_gate.py not found"
+            exit 1
+          fi
